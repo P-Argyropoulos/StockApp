@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  api:
+    image: dcce1337/myapi:latest
+    container_name: api-container
+    ports:
+      - "5014:5014"
+    environment:
+      - DB_CONNECTION_STRING=Server=db,1433; Database=HakiosDB;User=sa;Password=StrongPassword123;TrustServerCertificate=True
+    depends_on:
+      migrate-db:
+        condition: service_completed_successfully
+    networks:
+      - my-network
+
+  db:
+    image: mcr.microsoft.com/mssql/server:latest
+    container_name: sql-server-container
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=StrongPassword123 
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - my-network
+
+  migrate-db:
+    image: dcce1337/migrate-image:latest 
+    container_name: migrate-db
+    depends_on:
+      db:
+        condition: service_started  
+    networks:
+      - my-network
+    restart: "no"
+    command: ["/migrate.sh"]  
+    
+volumes:
+  sql-data:
+    driver: local
+
+networks:
+  my-network:
+    driver: bridge
+
