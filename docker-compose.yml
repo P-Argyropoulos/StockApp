@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile  
+    container_name: api-container
+    ports:
+      - "5014:5014"
+    environment:
+      - DB_CONNECTION_STRING=Server=db,1433;Database=HakiosDB;User=sa;Password=StrongPassword123;TrustServerCertificate=True
+    depends_on:
+      - db
+    networks:
+      - my-network
+
+  db:
+    image: mcr.microsoft.com/mssql/server:latest
+    container_name: sql-server-container
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=StrongPassword123 
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql  
+    networks:
+      - my-network
+
+  migrate-db:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrations  
+    container_name: migrate-db
+    depends_on:
+      - db
+    networks:
+      - my-network
+    restart: "no"  
+
+volumes:
+  sql-data:
+    driver: local
+
+networks:
+  my-network:
+    driver: bridge
+
